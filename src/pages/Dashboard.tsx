@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store/store';
 import { openSlideOver, setHoveredDataPoint, closeSlideOver } from '../store/slices/uiSlice';
@@ -8,7 +8,7 @@ import SlideOverCard from '../components/SlideOverCard';
 import DataPointDetails from '../components/DataPointDetails';
 import { Battery100Icon, BoltIcon, SparklesIcon, ArrowPathRoundedSquareIcon, ArrowUpTrayIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
-import { QuestionMarkCircleIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
+import { QuestionMarkCircleIcon, ArrowUpIcon, CheckIcon } from '@heroicons/react/24/outline';
 import {
   Bars3Icon,
   HomeIcon,
@@ -17,17 +17,8 @@ import {
   Cog6ToothIcon,
   UserCircleIcon
 } from '@heroicons/react/24/outline';
-import type { TooltipProps } from 'recharts';
+import type { Label, TooltipProps } from 'recharts';
 import type { CSSProperties } from 'react';
-import clipboardTime from '../assets/clipboard-text-clock.png';
-import bell from '../assets/bell.png';
-import cloudUpload from '../assets/cloud-upload.png';
-import cog from '../assets/cog.png';
-import home from '../assets/home.png';
-import profile from '../assets/Vector.png';
-import recent from '../assets/recent.png';
-import upload from '../assets/Frame 3770.png';
-import lightning from '../assets/Lightning.png';
 
 const chartData = [
   { month: 'Apr', value: 42000 },
@@ -99,35 +90,164 @@ const CustomTooltip = ({ active, payload, label, coordinate }: any) => {
   return null;
 };
 
+// Reusable category section component
+const CategorySection = ({
+  title,
+  buttons,
+  selected,
+  onSelect,
+  setHoveredPill
+}: {
+  title: string;
+  buttons: { id: string; label: string }[];
+  selected: string[];
+  onSelect: (id: string) => void;
+  setHoveredPill: (id: string | null) => void;
+}) => (
+  <div className="mb-4">
+    <div className="text-left font-inter font-medium text-[15px] leading-[150%] tracking-[-0.023em] text-[#D5D5D5] mb-2">
+      {title}
+    </div>
+    <div className="flex flex-wrap gap-4">
+      {buttons.map(({ id, label }) => {
+        const isSelected = selected.includes(id);
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelect(id)}
+            onMouseEnter={() => setHoveredPill(id)}
+            onMouseLeave={() => setHoveredPill(null)}
+            className={`flex items-center h-[33px] px-4 py-1 rounded-full font-medium text-[15px] gap-2 transition 
+              top-[5px] right-[5px] bottom-[5px] left-[10px] gap-20px
+            `}
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 400,
+              fontSize: '15px',
+              lineHeight: '150%',
+              letterSpacing: '-2%',
+              backgroundColor: isSelected ? '#CCFF001A' : '#5959594D',
+              borderRadius: '100px',
+              border: isSelected ? '1px solid #C9FF3B' : '1px solid #EEEEEE',
+              color: isSelected ? '#C8E972FD' : '#D5D5D5',
+            }}
+          >
+            {/* Button Text */}
+            <span className="flex-1 text-left">{label}</span>
+            {/* Icons on the right */}
+            <span className="flex items-center gap-2">
+              {/* Sparkle Icon */}
+              <span className={`flex items-center justify-center w-5 h-5 rounded-full p-[3px] ${!isSelected ? 'text-[#D5D5D5]' : 'text-[#C8E972FD]'}`}>
+                <SparklesIcon className="size-[16px]" />
+              </span>
+              {/* Plus Icon */}
+              <span className={`flex items-center justify-center w-5 h-5 rounded-full p-[3px]'}`}>
+                
+                {isSelected ? <CheckIcon className="size-[16px] text-[#C9FF3B]" /> : 
+                <svg width="16" height="16" fill="none" color='#D5D5D5' viewBox="0 0 20 20">
+                <path d="M10 4V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M4 10H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
+function handleToggle(selected: string[], setSelected: (val: string[]) => void, id: string) {
+  setSelected(
+    selected.includes(id)
+      ? selected.filter(selId => selId !== id)
+      : [...selected, id]
+  );
+}
+
+function getLabelById(id: string) {
+  const allButtons = [...category1Buttons, ...category2Buttons, ...category3Buttons];
+  return allButtons.find(btn => btn.id === id)?.label || '';
+}
+
+function getDescriptionById(id: string) {
+  // Map ids to descriptions as needed
+  if (id === 'cat1-2') return "But what truly sets Switch apart is its versatility. ...";
+  // Add more cases for other ids
+  return "No description available.";
+}
+
+const category1Buttons = [
+  { id: 'cat1-1', label: 'Carbon 1' },
+  { id: 'cat1-2', label: 'Co2 Distribution' },
+  { id: 'cat1-3', label: 'Fleet sizing' },
+];
+const category2Buttons = [
+  { id: 'cat2-1', label: 'Parking Rate' },
+  { id: 'cat2-2', label: 'Border Rate' },
+  { id: 'cat2-3', label: 'Request rate' },
+  { id: 'cat2-4', label: 'Variable 1' },
+  { id: 'cat2-5', label: 'Variable 2' },
+  { id: 'cat2-6', label: 'Variable 3' },
+];
+const category3Buttons = [
+  { id: 'cat3-1', label: 'Variable 4' },
+  { id: 'cat3-2', label: 'Variable 5' },
+  { id: 'cat3-3', label: 'Variable 6' },
+];
+
 export default function Dashboard() {
   const dispatch = useDispatch();
   const { isSlideOverOpen, hoveredDataPoint } = useSelector((state: RootState) => state.ui);
   const { variables } = useSelector((state: RootState) => state.variables);
   const [activeTab, setActiveTab] = useState('Charging Stations');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showNav, setShowNav] = useState(false);
+  const [hoveredPill, setHoveredPill] = useState<string | null>(null);
+  const [selectedPill, setSelectedPill] = useState<string>('Parking Rate');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Parking Rate');
+  const [selectedCat1, setSelectedCat1] = useState<string[]>([]);
+  const [selectedCat2, setSelectedCat2] = useState<string[]>([]);
+  const [selectedCat3, setSelectedCat3] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isSlideOverOpen) {
+      setSelectedIndex(0); // or last used
+      setShowNav(true);
+      const timer = setTimeout(() => setShowNav(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isSlideOverOpen]);
+
+  const handleNext = () => setSelectedIndex(i => Math.min(i + 1, variables.length - 1));
+  const handlePrev = () => setSelectedIndex(i => Math.max(i - 1, 0));
 
   return (
     <div className="w-screen h-screen flex">
       {/* Sidebar */}
-      <aside className="w-[80px] h-screen bg-[#000000] flex flex-col items-center justify-between py-4">
+      <aside className="w-[80px] h-screen bg-[#000000] border-r border-[#525252] flex flex-col items-center justify-between py-4">
         {/* Top section */}
-        <div className="flex flex-col items-center gap-10 w-full pt-4">
+        <div className="flex flex-col items-center gap-6 w-full">
           <Bars3Icon className="w-7 h-7 text-white mb-2" />
-          <img src={home} alt="home" className="w-6 h-6" />
-          <img src={bell} alt="bell" className="w-6 h-6" />
-          <img src={clipboardTime} alt="clipboard time" className="w-6 h-6" />
-          <img src={cloudUpload} alt="cloud upload" className="w-6 h-6" />
-          <img src={cog} alt="cog" className="w-6 h-6" />
+          <span className="w-10 h-10 flex items-center justify-center bg-[#232323] rounded-full">
+            <HomeIcon className="w-6 h-6 text-white" />
+          </span>
+          <BellIcon className="w-6 h-6 text-[#888888]" />
+          <CameraIcon className="w-6 h-6 text-[#888888]" />
+          <ArrowUpTrayIcon className="w-6 h-6 text-[#888888]" />
+          <Cog6ToothIcon className="w-6 h-6 text-[#888888]" />
         </div>
         {/* Bottom section */}
         <div className="flex flex-col items-center w-full">
-          <img src={profile} alt="Profile" className="w-6 h-6" />
+          <UserCircleIcon className="w-7 h-7 text-white" />
         </div>
       </aside>
       {/* Main content */}
-      <section className="bg-[#161618] flex-1 flex flex-col">
+      <section className=" bg-[#161618] border border-[#525252] flex-1 flex flex-col">
         {/* Header */}
         <header
-          className="w-full bg-[#000000] w-[calc(100vw-80px)] h-[87px] top-[5px] flex justify-between items-center pt-5 pb-5 pl-6 pr-6"
+          className="w-full bg-[#000000] border-b border-[#525252] w-[calc(100vw-80px)] h-[87px] top-[5px] flex justify-between items-center pt-5 pb-5 pl-6 pr-6"
         >
           <div className="flex items-center space-x-2 md:space-x-4">
             {['Charging Stations', 'Fleet Sizing', 'Parking'].map(tab => (
@@ -152,27 +272,31 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="flex items-center space-x-2 md:space-x-3">
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 w-[19.37px] h-[19.37px] z-10 pointer-events-none">
-                {/* Search icon */}
-                <svg width="19.37" height="19.37" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="#EDEDED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <div className="flex items-center gap-2 w-full">
+              <div className="relative flex-1">
+                <input
+                  className="w-full h-9 rounded-[5px] border border-transparent bg-[#18181A] pl-10 pr-3 text-[#EDEDED] font-inter font-medium text-[14px] leading-[150%] tracking-[-0.023em] placeholder-[#A3A3A3]"
+                  placeholder="Search"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A3A3A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8" strokeWidth="2" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" strokeWidth="2" />
                 </svg>
               </div>
-              <input
-                className="w-[237px] h-[37px] rounded-[5px] border border-[#5A5A5A] pt-2 pr-3 pb-2 pl-12 bg-[#2C2E334D] backdrop-blur-[24px] text-[#EDEDED] font-inter font-medium text-[14px] leading-[150%] tracking-[-2.3%] placeholder-[#EDEDED] relative z-0"
-                placeholder="Search"
-                style={{
-                  fontFamily: 'Inter',
-                  letterSpacing: '-2.3%'
-                }}
-              />
+              <button className="flex items-center gap-2 h-9 px-4 rounded-[4px] border border-[#5A5A5A] bg-[#18181A] text-[#FFFFFF]" style={{border: '1px solid #5A5A5A', borderColor: '#5A5A5A'}}>
+                <svg className="w-4 h-4 text-[#B9B9B9]" /* ...icon... */ />
+                Autofill
+              </button>
+              <button className="flex items-center gap-2 h-9 px-4 rounded-[4px] bg-[#C9FF3B] text-[#18181A] font-[Roobert_TRIAL] font-medium text-[16px] leading-[150%] tracking-[-0.02em] shadow-[1px_2px_1px_0px_#00000040]">
+                <svg className="w-4 h-4" /* ...icon... */ />
+                Rerun
+              </button>
             </div>
           </div>
         </header>
         {/* Data/chart section */}
         <div
-          className="flex-1 border border-[#525252] rounded bg-[#161618] overflow-y-auto"
+          className="flex-1 border border-[#525252] bg-[#232323] overflow-y-auto"
           style={{
             borderTopRightRadius: 5,
             borderBottomRightRadius: 5,
@@ -183,289 +307,368 @@ export default function Dashboard() {
         >
           <div className="mx-auto p-4 sm:p-8">
             {/* Title and scenario results */}
-            <div className="flex items-center justify-between mb-6" style={{
+            <div className="flex items-center justify-between mb-4" style={{
               fontFamily: 'Roobert TRIAL, sans-serif',
               fontWeight: 700,
               lineHeight: '150%',
               color: '#FFFFFFFF'
             }}>
               <div className="flex items-center h-12 top-10">
-                <img src={lightning} alt="charging station" className="h-8 mr-4" />
+                <BoltIcon className="w-[30px] h-[30px] mr-2 text-[#FFFFFF] fill-[#FFFFFF]" />
                 <span className="text-[32px] font-bold m-0 p-0">Charging Station</span>
               </div>
-              <div className="flex items-center gap-3 h-[41px]">
-                <span className="w-[39px] h-[41px] bg-[#242424] rounded-[4px] pt-[1px] pr-[1px] border border-[#5A5A5A] flex items-center justify-center">
-                  <img src={recent} alt="recent" />
+              <div className="flex items-center gap-5 h-[41px]">
+                <span className="w-[39px] h-[41px] bg-[#242424] rounded-[4px] pt-[1px] pr-[1px] border border-[#5A5A5A] flex items-center justify-center -rotate-90">
+                  <ArrowPathRoundedSquareIcon className="w-[21px] h-[18px] text-gray-300" />
                 </span>
                 <button
                   onClick={() => dispatch(openSlideOver())}
-                  className="h-[41px]rounded-[3px] px-6 flex items-center justify-center text-[#FFFFFF]"
-                  style={{
-                    border: '1px solid rgba(90, 90, 90, 0.63)',
-                    backgroundColor: 'rgba(36, 36, 36, 1)',
-                  }}>
+                  className="h-[41px] bg-[#242424] border border-[#5A5A5A] rounded-[5px] px-6 flex items-center justify-center text-[#FFFFFF]"
+                >
                   Edit Variables
                 </button>
-                <span className="w-[39px] h-[41px] bg-[#242424] rounded-[4px] border border-[#5A5A5A] flex items-center justify-center">
-                  <img src={upload} alt="upload" className="object-contain" />
+                <span className="w-[39px] h-[41px] bg-[#242424] rounded-[4px] pr-2 border border-[#5A5A5A] flex items-center justify-center">
+                <ArrowUpTrayIcon className="w-6 h-6 text-gray-300 ml-2" />
                 </span>
               </div>
             </div>
-            <div className="bg-[#161618] rounded mb-2 flex flex-col gap-[24px]">
+            <div className="bg-[#232323] rounded mb-2 flex flex-col gap-[24px]">
               {/* Header */}
-              <div className="flex justify-between items-center pl-0 pr-4 py-2">
+              <div className="flex justify-between items-center px-4 py-2">
                 <div className="flex items-center gap-2.5">
                   <SparklesIcon className="size-[18px] text-[#DCFF7FFD]" />
                   <span
-                    className="font-[Roobert_TRIAL] font-semibold text-[24px] text-[#DCFF7FFD] rounded"
+                    className="font-[Roobert\ TRIAL] font-semibold text-[24px]  text-[#DCFF7FFD] px-2 rounded"
                   >
                     Best Scenario Results
                   </span>
                 </div>
-                <span className="w-[44px] h-[34px] bg-[#18181A] border border-[#C8E972] rounded-[56px] flex items-center justify-center">
+                <span className="w-[34px] h-[44px] bg-[#18181A] border border-[#C8E972] rounded-[56px] pt-[10px] pr-[5px] pb-[10px] pl-[5px] gap-[10px] flex items-center justify-center">
                   <ChevronUpIcon className="w-5 h-5 text-lime-300" />
                 </span>
               </div>
               {/* Content rows */}
-              <div className="font-[Inter] font-semibold text-[16px] text-[#C9FF3B] flex items-center justify-between border-[0.5px] border-[#C8E972] rounded-[6px] pt-[15px] pr-[24px] pb-[15px] pl-[24px] bg-[##CCFF0005]">
-                The best found configuration based on profit is characterized by 11 zones (max) with charging stations and 48 total number of poles.
+              <div className=" font-[Inter] font-semibold text-[16px]  text-[#C9FF3B] flex items-center justify-between border-[0.5px] border-[#C8E972] rounded-[6px] pt-[15px] pr-[24px] pb-[15px] pl-[24px] bg-[##CCFF0005]">
+              The best found configuration based on profit is characterized by 11 zones (max) with charging stations and 48 total number of poles.
                 <span className="w-6 h-6 text-[#C8E972]">•••</span>
-              </div>
-              <div className="font-[Inter] font-semibold text-[16px] text-[#C9FF3B] flex items-center justify-between border-[0.5px] border-[#C8E972] rounded-[6px] pt-[15px] pr-[24px] pb-[15px] pl-[24px] bg-[##CCFF0005]">
-                The best found configuration based on satisfied demand is characterized by 11 zones (max) with charging stations and 48 total number of poles.
-                <span className="w-6 h-6 text-[#C8E972]">•••</span>
+            </div>
+              <div className=" font-[Inter] font-semibold text-[16px]  text-[#C9FF3B] flex items-center justify-between border-[0.5px] border-[#C8E972] rounded-[6px] pt-[15px] pr-[24px] pb-[15px] pl-[24px] bg-[##CCFF0005]">
+              The best found configuration based on satisfied demand is characterized by 11 zones (max) with charging stations and 48 total number of poles.
+              <span className="w-6 h-6 text-[#C8E972]">•••</span>
               </div>
             </div>
-
+            
             {/* Graphs and KPIs */}
-            <div className={`flex flex-col lg:flex-row mt-8 ${isSlideOverOpen ? 'opacity-50' : ''} gap-0 lg:gap-[19px]`}>
+            <div className={`relative flex flex-col lg:flex-row gap-8 mt-8 ${isSlideOverOpen ? 'opacity-50' : ''}`}>
               <div className="w-full lg:w-3/5">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-2xl font-bold text-white">Graphs</span>
-
-                </div>
-                <div className="border border-[#525252] rounded-[5px] bg-[#222324] shadow-[0_4px_4px_0_#00000040] flex flex-col w-full"
-                  style={{
-                    height: 462,
-                    minHeight: 462,
-                    maxHeight: 462,
-                    padding: 0,
-                    paddingRight: 50,
-                    margin: 0,
-                  }}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-2xl font-bold text-white">Graphs</span>
+               
+              </div>
+              <div className="bg-[#232323] border border-[#525252] flex flex-col gap-4 rounded-[5px] p-8 shadow-[0_4px_4px_0_#00000040] w-full">
+                <div className="h-[340px] w-full">
+                <button
+                  className="ml-auto mr-6 h-[32px] bg-[#18181A80] border border-[] rounded-[5px] pt-[5px] pr-[4px] pb-[15px] pl-[4px] gap-[10px] flex items-center"
                 >
-                  <div className="flex items-center justify-between px-3 pt-6 pb-2">
-                    <span className="text-2xl font-bold text-white"></span>
-                    <button
-                      className="h-[32px] bg-[#18181A80] border border-[] rounded-[5px] px-3 flex items-center"
-                       style={{
-                    border: '1px solid rgba(90, 90, 90, 0.63)',
-                    backgroundColor: 'rgba(36, 36, 36, 1)',
-                  }}
-                    >
-                      <span className="font-inter font-medium text-[14px] leading-[150%] tracking-[-0.04em] pr-2 text-[#FCFCFC]">
-                        Unsatisfied Demand %
-                      </span>
-                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 9l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="flex-1 flex items-center justify-center pb-6 px-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={chartData}
-                        margin={{ top: 20, right: 30, left: 0, bottom: 30 }}
-                      >
-                        <CartesianGrid stroke="#333" strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="month"
-                          padding={{ left: 30, right: 10 }}
-                          tick={({ x, y, payload }) => (
-                            <g transform={`translate(${x},${y})`}>
-                              <text fill="#fff" fontSize={15} textAnchor="middle" dy={20}>{payload.value}</text>
-                              {payload.value === 'May' && (
-                                <text fill="#888" fontSize={11} textAnchor="middle" dy={36}>Now</text>
-                              )}
-                            </g>
-                          )}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          type="number"
-                          domain={[0, 100000]}
-                          ticks={[20000, 40000, 60000, 80000, 100000]}
-                          allowDataOverflow={true}
-                          tickFormatter={v => `$${v / 1000}K`}
-                          tick={{ fill: '#fff', fontSize: 15 }}
-                          axisLine={false}
-                          tickLine={false}
-                          width={60}
-                        />
-                        <Tooltip
-                          content={(props) => <CustomTooltip {...props} />}
-                          cursor={{ stroke: '#D4FF3F', strokeDasharray: '3 3' }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#D4FF3F"
-                          strokeWidth={3}
-                          dot={{ r: 6, stroke: '#D4FF3F', strokeWidth: 2, fill: '#232323' }}
-                          activeDot={{ r: 8, fill: '#D4FF3F', stroke: '#fff', strokeWidth: 2 }}
-                        />
-                        <ReferenceLine
-                          stroke="#D4FF3F"
-                          strokeDasharray="6 6"
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <span className="font-inter font-medium text-[14px] leading-[150%] tracking-[-0.04em] text-[#FCFCFC]">
+                    Unsatisfied Demand %
+                  </span>
+                  <svg className="w-6 h-6 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 9l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid stroke="#333" strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="month"
+                        tick={({ x, y, payload }) => (
+                          <g transform={`translate(${x},${y})`}>
+                            <text fill="#fff" fontSize={13} textAnchor="middle" y={0}>{payload.value}</text>
+                            {payload.value === 'May' && (
+                              <text fill="#888" fontSize={10} textAnchor="middle" y={15}>Now</text>
+                            )}
+                          </g>
+                        )}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        domain={[20000, 100000]}
+                        ticks={[20000, 40000, 60000, 80000, 100000]}
+                        tickFormatter={v => `$${v / 1000}K`}
+                        tick={{ fill: '#fff', fontSize: 13 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        content={(props) => <CustomTooltip {...props} />}
+                        cursor={{ stroke: '#D4FF3F', strokeDasharray: '3 3' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#D4FF3F"
+                        strokeWidth={3}
+                        dot={{ r: 6, stroke: '#D4FF3F', strokeWidth: 2, fill: '#232323' }}
+                        activeDot={{ r: 8, fill: '#D4FF3F', stroke: '#fff', strokeWidth: 2 }}
+                      />
+                      <ReferenceLine
+                        segment={[
+                          { x: 'Jul', y: 0 },
+                          { x: 'Jul', y: 69000 }
+                        ]}
+                    stroke="#D4FF3F"
+                        strokeDasharray="6 6"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-
+              </div>
+            
 
               {/* KPI Section */}
               {!isSlideOverOpen &&
-                <div className="w-full lg:w-2/5 flex flex-col items-center gap-1">
-                  <div className="flex items-center mb-1 w-full max-w-[530px] justify-around">
+              <div className="w-full lg:w-2/5">
+              
+                  <div className="flex items-center justify-between mb-1">
                     <span className="text-2xl font-bold text-white">Key Performance Indicators</span>
                     <button
-                      className="bg-[#232323] text-white flex rounded text-sm items-center gap-2 px-1 mb-1"
+                      className="flex items-center h-[33px] opacity-80 border border-[#EEEEEE] border-[0.5px] rounded-[20px] bg-[#5959594D] px-[10px] py-[5px] gap-[20px]"
                       style={{
-                        border: '1px solid rgba(90, 90, 90, 0.63)',
-                        paddingTop: 0,
-                        paddingBottom: 0,
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '15px',
+                        lineHeight: '150%',
+                        letterSpacing: '-2%',
                       }}
                     >
-                      Variables <span className="text-2xl flex items-center pl-1 pb-1">+</span>
+                      {/* First Icon (Sparkles) */}
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#232323] border border-[#C9FF3B]">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+                          <path d="M6 8l4 4 4-4" stroke="#C9FF3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      {/* Button Text */}
+                      <span className="text-[#EDEDED]">Variable 1</span>
+                      {/* Second Icon (Plus) */}
+                      <span className="flex items-center justify-center w-[20px] h-[20px] rounded-[20px] bg-[#D5D5D5] p-[3px] ml-[10px]">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                          <path d="M10 4V16" stroke="#888888" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M4 10H16" stroke="#888888" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      </span>
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-[20px] gap-y-[20px] w-[502px]">
-                    {kpis.map((kpi, i) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {kpis.map((kpi, i) => (
                       <div
                         key={kpi.title}
-                        className="w-[241px] h-[221px] rounded-lg p-6 border border-[#525252] text-white flex flex-col gap-2"
-                        style={{
-                          background: '#222324',
-                          boxShadow: '0px 4px 4px 0px #00000040'
-                        }}
+                        className=" 
+                        w-[241px] h-[215px] top-[-1px] left-[0px] rounded-[1px] gap-[32px]
+                        bg-[#18181A] rounded-lg p-6 border border-[#525252] text-white flex flex-col justify-between shadow-[0_4px_4px_0_#00000040] mb-1"
                       >
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between">
                           <div className="font-inter font-medium text-[18px] leading-[100%] tracking-[-0.04em] text-[#FFFFFF]">
                             {kpi.title}
                           </div>
                           <QuestionMarkCircleIcon className="size-[14px] text-[#888888]" />
                         </div>
-                        <div className="font-inter font-light text-[12px] leading-[150%] tracking-normal text-[#BBBBBB] mb-2">
+                        <div className="font-inter font-light text-[12px] leading-[150%] tracking-normal align-middle text-[#BBBBBB] px-1 rounded">
                           {kpi.desc}
                         </div>
-                        <div className="font-[Roobert_TRIAL] font-bold text-[32px] leading-[88%] tracking-[-0.02em] text-right text-[#FFFFFF] mt-auto">
+                        <div className="font-[Roobert_TRIAL] font-bold text-[32px] leading-[88%] tracking-[-0.02em] text-right align-middle text-[#FFFFFF] px-2 rounded">
                           {kpi.value}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              }
-              {isSlideOverOpen && <div className="fixed inset-0 z-50 flex items-center justify-end bg-black bg-opacity-60 backdrop-blur-sm">
-                <div className="h-full flex items-center justify-end w-full">
-                  <div className="bg-[#18181A] border border-[#525252] rounded-[10px] shadow-2xl p-6 w-[50vw] max-w-none h-full flex flex-col">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-lg font-bold text-white">Edit Variables</span>
-                      <button
-                        className="text-white text-2xl"
-                        onClick={() => dispatch(closeSlideOver())}
-                      >
-                        &times;
-                      </button>
                     </div>
-                    {/* Search, Autofill, Rerun */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="relative flex-1">
-                        <input
-                          className="w-full h-9 rounded-[5px] border border-[#525252] bg-[#232323] pl-10 pr-3 text-white placeholder-[#A3A3A3] text-sm"
-                          placeholder="Search"
-                        />
-                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A3A3A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <circle cx="11" cy="11" r="8" strokeWidth="2" />
-                          <line x1="21" y1="21" x2="16.65" y2="16.65" strokeWidth="2" />
+                  ))}
+                  </div>
+                
+              </div>
+              }
+             
+            </div>
+          </div>
+
+        </div>
+          {isSlideOverOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-end backdrop-blur-xs backdrop-brightness-75">
+              <div className="h-full flex items-center justify-end w-full">
+                <div className="bg-[#18181A] border border-[#525252] rounded-[10px] shadow-2xl p-6 w-[50vw] max-w-none h-full flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4 h-[36px] top-[42px] left-[32px] justify-content-space-between">
+                    <span className="text-lg font-bold text-white">Edit Variables</span>
+                    <button
+                      className="text-white text-2xl"
+                      onClick={() => dispatch(closeSlideOver())}
+                    >
+                      X
+                    </button>
+                  </div>
+                  {/* Search, Autofill, Rerun */}
+                  <div className="flex justify-between gap-2 mb-4">
+                    <div className='w-full'>
+
+                    <div className="relative w-full">
+                      <input
+                        className="w-full h-9 rounded-[5px] border border-[#525252] bg-[#232323] pl-10 pr-3 text-white placeholder-[#A3A3A3] text-sm"
+                        placeholder="Search"
+                        style={{
+                          fontFamily: 'Inter, sans-serif',
+                          fontWeight: 500,
+                          fontSize: '14px',
+                          lineHeight: '150%',
+                          letterSpacing: '-2.3%',
+                          background: '#18181A',
+                        }}
+                      />
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A3A3A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8" strokeWidth="2" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" strokeWidth="2" />
+                      </svg>
+                    </div>
+                    </div>
+<div className='flex gap-2'>
+                    <button
+                      className="flex items-center justify-center rounded-[5px] border border-[#5A5A5A] bg-[#242424] gap-2"
+                    >
+                      <span
+                        className="flex items-center justify-center"
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                        }}
+                      >
+                                        <SparklesIcon className="size-[16px] text-[#D5D5D5]" />
+
+                      </span>
+                      <span
+                        className="font-[Roobert_TRIAL] font-medium  rounded"
+                      
+                      >
+                        Autofill
+                      </span>
+                    </button>
+                    <button
+                      className="flex items-center justify-center rounded-[5px] border border-[#5A5A5A] bg-[#70834000] gap-2"
+                      style={{backgroundColor: '#23291E',color: '#C9FF3B'}}
+                    >
+                      <span
+                        className="flex items-center justify-center"
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                        }}
+                      >
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <path
+    d="M24 20C22.3431 22.3431 19.6569 24 16.5 24C11.2533 24 7 19.7467 7 14.5C7 9.25329 11.2533 5 16.5 5C20.1421 5 23.1957 7.23858 24.7082 10.5"
+    stroke="#C9FF3B"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
+  <path
+    d="M24 10V14.5H19.5"
+    stroke="#C9FF3B"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
+</svg>
+                    {/* <SparklesIcon className="size-[16px] text-[#D5D5D5]" /> */}
+                      </span>
+                      <span
+                        className="font-[Roobert_TRIAL] font-medium  rounded"
+                      
+                      >
+                        Rerun
+                      </span>
+                    </button>
+                    </div>
+                  </div>
+                  {/* Variable Categories */}
+                  <div className="flex flex-col gap-8 bg-[#232323] border border-[#525252] rounded-[5px] p-4 overflow-y-auto">
+                    {/* Category 1 */}
+                    <CategorySection
+                      title="Variable category 1"
+                      buttons={category1Buttons}
+                      selected={selectedCat1}
+                      onSelect={id => handleToggle(selectedCat1, setSelectedCat1, id)}
+                      setHoveredPill={setHoveredPill}
+                    />
+                    {/* Category 2 */}
+                    <CategorySection
+                      title="Variable Category 2"
+                      buttons={category2Buttons}
+                      selected={selectedCat2}
+                      onSelect={id => handleToggle(selectedCat2, setSelectedCat2, id)}
+                      setHoveredPill={setHoveredPill}
+                    />
+                    {/* Category 3 */}
+                    <CategorySection
+                      title="Variable Category 3"
+                      buttons={category3Buttons}
+                      selected={selectedCat3}
+                      onSelect={id => handleToggle(selectedCat3, setSelectedCat3, id)}
+                      setHoveredPill={setHoveredPill}
+                    />
+                  {/* Variable Description Card */}
+                  {hoveredPill && (
+                    <div className="mt-2 w-full bg-[#232323] border border-[#525252] rounded-[5px] p-4 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-white font-semibold">
+                          {(() => {
+                            const allButtons = [...category1Buttons, ...category2Buttons, ...category3Buttons];
+                            return allButtons.find(btn => btn.id === hoveredPill)?.label || '';
+                          })()}
+                        </span>
+                        <svg className="w-4 h-4 text-[#BBBBBB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                          <text x="12" y="16" textAnchor="middle" fontSize="12" fill="#BBBBBB">i</text>
                         </svg>
                       </div>
-                      <button className="bg-[#232323] border border-[#525252] text-white px-4 py-2 rounded text-sm">Autofill</button>
-                      <button className="bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] px-4 py-2 rounded text-sm flex items-center gap-2">
-                        <span>Rerun</span>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582M20 20v-5h-.581M5.5 19A9 9 0 1 1 19 5.5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </button>
-                    </div>
-                    {/* Variable Categories */}
-                    <div className="bg-[#232323] border border-[#525252] rounded-[5px] p-4 mb-4 flex-1 overflow-y-auto">
-                      {/* Category 1 */}
-                      <div className="mb-3">
-                        <div className="text-xs text-[#A3A3A3] mb-2">Variable category 1</div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#525252] text-white text-xs flex items-center gap-1">Carbon 1 <span className="text-[#FF4747] text-base">•</span></span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] text-xs flex items-center gap-1">Co2 Distribution <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 20 20"><path d="M7 7l3-3 3 3M7 13l3 3 3-3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] text-xs flex items-center gap-1">Fleet sizing <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 20 20"><path d="M7 7l3-3 3 3M7 13l3 3 3-3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
-                        </div>
-                      </div>
-                      {/* Category 2 */}
-                      <div className="mb-3">
-                        <div className="text-xs text-[#A3A3A3] mb-2">Variable Category 2</div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#525252] text-white text-xs">Parking Rate</span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] text-xs">Border Rate</span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] text-xs">Request rate</span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#525252] text-white text-xs">Variable 1</span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#525252] text-white text-xs">Variable 1</span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] text-xs">Variable 1</span>
-                        </div>
-                      </div>
-                      {/* Category 3 */}
-                      <div className="mb-3">
-                        <div className="text-xs text-[#A3A3A3] mb-2">Variable Category 3</div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#525252] text-white text-xs">Variable 1</span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] text-xs">Variable 1</span>
-                          <span className="px-3 py-1 rounded-full bg-[#232323] border border-[#B6FF6C] text-[#B6FF6C] text-xs">Variable 1</span>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Variable Description Card */}
-                    <div className="bg-[#232323] border border-[#525252] rounded-[5px] p-4 mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-white font-semibold">Co2 Distribution</span>
-                        <svg className="w-4 h-4 text-[#BBBBBB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2" /><text x="12" y="16" textAnchor="middle" fontSize="12" fill="#BBBBBB">i</text></svg>
-                      </div>
                       <div className="text-xs text-[#BBBBBB]">
+                        {/* Placeholder description, you can map by id if needed */}
                         But what truly sets Switch apart is its versatility. It can be used as a scooter, a bike, or even a skateboard, making it suitable for people of all ages. Whether you're a student, a professional, or a senior citizen, Switch adapts to your needs and lifestyle.
                       </div>
                     </div>
-                    {/* Accordions */}
-                    <div className="mb-2">
-                      <button className="w-full flex items-center justify-between bg-[#232323] border border-[#525252] rounded-[5px] px-4 py-3 text-left text-[#B6FF6C] font-semibold text-base mb-2">
-                        Primary Variables
-                        <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </button>
-                      <button className="w-full flex items-center justify-between bg-[#232323] border border-[#525252] rounded-[5px] px-4 py-3 text-left text-[#B6FF6C] font-semibold text-base">
-                        Secondary Variables
-                        <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </button>
+                  )}
+                  </div>
+                  {/* Accordions */}
+                  <div className="mb-2 mt-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between bg-[#232323] border border-[#525252] rounded-[5px] px-4 py-2 mb-2">
+                      <span className="text-[#C9FF3B] font-medium text-[18px]">Primary Variables</span>
+                      <div className="w-12 h-9 rounded-[20px] flex items-center justify-center bg-[#232323] border-2 border-[#C9FF3B]">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+                          <path d="M6 8l4 4 4-4" stroke="#C9FF3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between bg-[#232323] border border-[#525252] rounded-[5px] px-4 py-2">
+                      <span className="text-[#C9FF3B] font-medium text-[18px]">Secondary Variables</span>
+                      <div className="w-12 h-9 rounded-[20px] flex items-center justify-center bg-[#232323] border-2 border-[#C9FF3B]">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
+                          <path d="M6 8l4 4 4-4" stroke="#C9FF3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
                     </div>
                   </div>
+                  {showNav && (
+                    <div className="flex justify-between">
+                      <button onClick={handlePrev}>Previous</button>
+                      <button onClick={handleNext}>Next</button>
+                    </div>
+                  )}
                 </div>
-              </div>}
-
-
+              </div>
             </div>
-          </div>
-        </div>
+          )}
       </section>
 
-
+    
 
       {/* Data Point Details */}
       {hoveredDataPoint && (
@@ -476,4 +679,4 @@ export default function Dashboard() {
       )}
     </div>
   );
-}
+} 
